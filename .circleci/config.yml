@@ -40,7 +40,7 @@ jobs:
           docker build --build-arg TAG=${MINORTAG}.${BASE_VERSION} -t dexels/navajo-streams:$TAG -t dexels/navajo-streams:latest .
           docker push dexels/navajo-streams:$TAG
           docker push dexels/navajo-streams:latest
-          curl -X POST --header "Content-Type: application/json" -d '{"branch":"performance_lowlevel"}' "https://circleci.com/api/v1.1/project/github/dexels/sportlink.replication/build?circle-token=${CIRCLE_TOKEN}"
+          curl -X POST --header "Content-Type: application/json" -d '{"branch":"master"}' "https://circleci.com/api/v1.1/project/github/dexels/sportlink.replication/build?circle-token=${CIRCLE_TOKEN}"
 
 workflows:
   version: 2
