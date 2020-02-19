@@ -49,4 +49,9 @@ workflows:
       - package_navajo:
           requires:
             - build
-      - build
+      - build:
+          filters:
+            branches:
+              only:
+                - master
+
