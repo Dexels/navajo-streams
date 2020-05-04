@@ -11,9 +11,8 @@ jobs:
       - checkout
       - run: |
           mkdir plugins
-          BASE_CONTAINER_BUILD=$(curl -s "https://circleci.com/api/v1.1/project/github/Dexels/dexels-base?circle-token=${CIRCLE_TOKEN}&limit=100&offset=0&filter=successful" | jq '[.[]| select(.workflows.job_name == "build")][0].build_num')
           NAVAJO_VERSION=$(curl -s "https://circleci.com/api/v1.1/project/github/Dexels/navajo?circle-token=${CIRCLE_TOKEN}&limit=100&offset=0&filter=successful" | jq '[.[]| select(.branch == "master")][0].build_num')
-          curl -s "https://${NAVAJO_VERSION}-4423334-gh.circle-artifacts.com/0/streams_p2.zip?circle-token=$CIRCLE_TOKEN" -o streams_p2.zip
+          curl -L -s "https://${NAVAJO_VERSION}-4423334-gh.circle-artifacts.com/0/streams_p2.zip?circle-token=$CIRCLE_TOKEN" -o streams_p2.zip
           ls *.zip | xargs -I '{}' unzip -o '{}'
           rm -rf artifacts.* content.* features* *.index
           rm *.zip
