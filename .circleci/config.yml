@@ -45,7 +45,7 @@ jobs:
             echo "Building ${IMAGE}${TAG} from dexels/dexels-base:${DEXELS_BASE_TAG}"
             cd ~/repo
             ls -l
-            docker build --build-arg TAG=${MINORTAG}.${BASE_VERSION} -t ${IMAGE}:$TAG .
+            docker build --build-arg TAG=${DEXELS_BASE_TAG} -t ${IMAGE}:$TAG .
             docker push dexels/navajo-streams:$TAG
             if [ "${CIRCLE_BRANCH}" = "master"]; then
               docker tag  ${IMAGE}:$TAG ${IMAGE}:latest
