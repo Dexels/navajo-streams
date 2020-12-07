@@ -17,7 +17,7 @@ jobs:
           name: Fetch Streams P2 Environment from CircleCI artifacts
           command: |
             mkdir plugins
-            NAVAJO_VERSION=$(curl -s "https://circleci.com/api/v1.1/project/github/Dexels/navajo?circle-token=${CIRCLE_TOKEN}&limit=100&offset=0&filter=successful" | jq '[.[]| select(.branch == "master")][0].build_num')
+            NAVAJO_VERSION=$(curl -s "https://circleci.com/api/v1.1/project/github/Dexels/navajo?circle-token=${CIRCLE_TOKEN}&limit=100&offset=0&filter=successful" | jq "[.[]| select(.branch == \"${CIRCLE_BRANCH}\")][0].build_num")
             curl -L -s "https://${NAVAJO_VERSION}-4423334-gh.circle-artifacts.com/0/streams_p2.zip?circle-token=$CIRCLE_TOKEN" -o streams_p2.zip
             ls *.zip | xargs -I '{}' unzip -o '{}'
             rm -rf artifacts.* content.* features* *.index
@@ -38,23 +38,26 @@ jobs:
           command: |
             MINORTAG=3.3
             TAG=${MINORTAG}.$CIRCLE_BUILD_NUM
-            BASE_VERSION=$(curl -s "https://circleci.com/api/v1.1/project/github/Dexels/dexels-base?circle-token=${CIRCLE_TOKEN}&limit=1&offset=0&filter=successful" | jq '.[0].build_num')
+            BASE_VERSION=$(curl -s "https://circleci.com/api/v1.1/project/github/Dexels/dexels-base?circle-token=${CIRCLE_TOKEN}&limit=1&offset=0&filter=successful" | jq ".[]| select(.branch == \"${CIRCLE_BRANCH}\" and .workflows.job_name == \"package\")][0].build_num")
             echo "Building tag: $TAG"
             cd ~/repo
             ls -l
-            docker build --build-arg TAG=${MINORTAG}.${BASE_VERSION} -t dexels/navajo-streams:$TAG -t dexels/navajo-streams:latest .
+            docker build --build-arg TAG=${MINORTAG}.${BASE_VERSION} -t dexels/navajo-streams:$TAG .
             docker push dexels/navajo-streams:$TAG
-            docker push dexels/navajo-streams:latest
-
+            if [ "${CIRCLE_BRANCH}" = "master"]; then
+              docker tag  dexels/navajo-streams:$TAG dexels/navajo-streams:latest
+              docker push dexels/navajo-streams:latest
+            fi
       - run:
           name: Trigger sportlink.replication build
           command: |
-            curl -X POST \
-              --header "Content-Type: application/json" \
-              --header "Circle-Token: ${CIRCLE_TOKEN}" \
-              -d '{"branch":"master"}' \
-              "https://circleci.com/api/v1.1/project/github/dexels/sportlink.replication/build?"
-
+            if [ "${CIRCLE_BRANCH}" = "master"]; then
+              curl -X POST \
+                --header "Content-Type: application/json" \
+                --header "Circle-Token: ${CIRCLE_TOKEN}" \
+                -d "{"branch":\"${CIRCLE_BRANCH}\"}" \
+                "https://circleci.com/api/v1.1/project/github/dexels/sportlink.replication/build?"
+            fi
 workflows:
   version: 2
   workflow:
@@ -66,4 +69,5 @@ workflows:
             branches:
               only:
                 - master
+                - test
 
