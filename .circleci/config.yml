@@ -36,17 +36,20 @@ jobs:
       - run:
           name: Build and push Docker image
           command: |
+            TAGSUFFIX=`[[ $CIRCLE_BRANCH = "master" ]] && echo "" || echo "-$CIRCLE_BRANCH"`
             MINORTAG=3.3
-            TAG=${MINORTAG}.$CIRCLE_BUILD_NUM
+            TAG=${MINORTAG}.${CIRCLE_BUILD_NUM}${TAGSUFFIX}
             BASE_VERSION=$(curl -s "https://circleci.com/api/v1.1/project/github/Dexels/dexels-base?circle-token=${CIRCLE_TOKEN}&limit=1&offset=0&filter=successful" | jq "[.[]| select(.branch == \"${CIRCLE_BRANCH}\" and .workflows.job_name == \"package\")][0].build_num")
-            echo "Building tag: $TAG"
+            IMAGE=dexels/navajo-streams
+            DEXELS_BASE_TAG=${MINORTAG}.${BASE_VERSION}${TAGSUFFIX}
+            echo "Building ${IMAGE}${TAG} from dexels/dexels-base:${DEXELS_BASE_TAG}"
             cd ~/repo
             ls -l
-            docker build --build-arg TAG=${MINORTAG}.${BASE_VERSION} -t dexels/navajo-streams:$TAG .
+            docker build --build-arg TAG=${MINORTAG}.${BASE_VERSION} -t ${IMAGE}:$TAG .
             docker push dexels/navajo-streams:$TAG
             if [ "${CIRCLE_BRANCH}" = "master"]; then
-              docker tag  dexels/navajo-streams:$TAG dexels/navajo-streams:latest
-              docker push dexels/navajo-streams:latest
+              docker tag  ${IMAGE}:$TAG ${IMAGE}:latest
+              docker push ${IMAGE}:latest
             fi
       - run:
           name: Trigger sportlink.replication build
