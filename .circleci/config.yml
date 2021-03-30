@@ -36,31 +36,37 @@ jobs:
       - run:
           name: Build and push Docker image
           command: |
-            TAGSUFFIX=`[[ $CIRCLE_BRANCH = "master" ]] && echo "" || echo "-$CIRCLE_BRANCH"`
-            MINORTAG=3.3
-            TAG=${MINORTAG}.${CIRCLE_BUILD_NUM}${TAGSUFFIX}
-            BASE_VERSION=$(curl -s "https://circleci.com/api/v1.1/project/github/Dexels/dexels-base?circle-token=${CIRCLE_TOKEN}&limit=100&offset=0&filter=successful" | jq "[.[]| select(.branch == \"${CIRCLE_BRANCH}\" and .workflows.job_name == \"package\")][0].build_num")
-            IMAGE=dexels/navajo-streams
-            DEXELS_BASE_TAG=${MINORTAG}.${BASE_VERSION}${TAGSUFFIX}
-            echo "Building ${IMAGE}${TAG} from dexels/dexels-base:${DEXELS_BASE_TAG}"
+            SUFFIX=$([[ $CIRCLE_BRANCH = "master" ]] && echo "" || echo "-$CIRCLE_BRANCH")
+            PREFIX="3.3"
+
+            IMAGE="dexels/navajo-streams"
+            VERSION="${PREFIX}.${CIRCLE_BUILD_NUM}${SUFFIX}"
+
+            DEXELSBASE_URL="https://circleci.com/api/v1.1/project/github/Dexels/dexels-base?circle-token=${CIRCLE_TOKEN}&limit=100&offset=0&filter=successful"
+            DEXELSBASE_BUILD=$(curl -s "$DEXELSBASE_URL" | jq "[.[]| select(.branch == \"${CIRCLE_BRANCH}\" and .workflows.job_name == \"package\")][0].build_num")
+            DEXELSBASE_VERSION=${PREFIX}.${DEXELSBASE_BUILD}${SUFFIX}
+
+            echo "Building '${IMAGE}${VERSION}' from 'dexels/dexels-base:${DEXELSBASE_VERSION}'"
             cd ~/repo
             ls -l
-            docker build --build-arg TAG=${DEXELS_BASE_TAG} -t ${IMAGE}:$TAG .
-            docker push dexels/navajo-streams:$TAG
+            docker  build  --build-arg TAG=${DEXELSBASE_VERSION}  -t "${IMAGE}:${VERSION}"  .
+            docker  push   "${IMAGE}:${VERSION}"
             if [ "${CIRCLE_BRANCH}" = "master" ]; then
-              docker tag  ${IMAGE}:$TAG ${IMAGE}:latest
-              docker push ${IMAGE}:latest
+                docker  tag   "${IMAGE}:${VERSION}" "${IMAGE}:latest"
+                docker  push  "${IMAGE}:latest"
             fi
+
       - run:
           name: Trigger sportlink.replication build
           command: |
             if [ "${CIRCLE_BRANCH}" = "master" ]; then
-              curl -X POST \
-                --header "Content-Type: application/json" \
-                --header "Circle-Token: ${CIRCLE_TOKEN}" \
-                -d "{"branch":\"${CIRCLE_BRANCH}\"}" \
-                "https://circleci.com/api/v1.1/project/github/dexels/sportlink.replication/build?"
+                curl -X POST \
+                    --header "Content-Type: application/json" \
+                    --header "Circle-Token: ${CIRCLE_TOKEN}" \
+                    -d "{"branch":\"${CIRCLE_BRANCH}\"}" \
+                    "https://circleci.com/api/v1.1/project/github/dexels/sportlink.replication/build?"
             fi
+
 workflows:
   version: 2
   workflow:
