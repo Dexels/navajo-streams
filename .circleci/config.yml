@@ -46,7 +46,7 @@ jobs:
             DEXELSBASE_BUILD=$(curl -s "$DEXELSBASE_URL" | jq "[.[]| select(.branch == \"${CIRCLE_BRANCH}\" and .workflows.job_name == \"package\")][0].build_num")
             DEXELSBASE_VERSION=${PREFIX}.${DEXELSBASE_BUILD}${SUFFIX}
 
-            echo "Building '${IMAGE}${VERSION}' from 'dexels/dexels-base:${DEXELSBASE_VERSION}'"
+            echo "Building '${IMAGE}:${VERSION}' from 'dexels/dexels-base:${DEXELSBASE_VERSION}'"
             cd ~/repo
             ls -l
             docker  build  --build-arg TAG=${DEXELSBASE_VERSION}  -t "${IMAGE}:${VERSION}"  .
@@ -63,7 +63,7 @@ jobs:
                 curl -X POST \
                     --header "Content-Type: application/json" \
                     --header "Circle-Token: ${CIRCLE_TOKEN}" \
-                    -d "{"branch":\"${CIRCLE_BRANCH}\"}" \
+                    -d "{ \"branch \" : \"${CIRCLE_BRANCH}\" }" \
                     "https://circleci.com/api/v1.1/project/github/dexels/sportlink.replication/build?"
             fi
 
