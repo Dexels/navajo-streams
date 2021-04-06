@@ -16,12 +16,12 @@ jobs:
       - run:
           name: Fetch Streams P2 Environment from CircleCI artifacts
           command: |
-            mkdir plugins
-            NAVAJO_VERSION=$(curl -s "https://circleci.com/api/v1.1/project/github/Dexels/navajo?circle-token=${CIRCLE_TOKEN}&limit=100&offset=0&filter=successful" | jq "[.[]| select(.branch == \"${CIRCLE_BRANCH}\")][0].build_num")
+            NAVAJO_URL="https://circleci.com/api/v1.1/project/github/Dexels/navajo?circle-token=${CIRCLE_TOKEN}&limit=100&offset=0&filter=successful"
+            NAVAJO_VERSION=$(curl -s "$NAVAJO_URL" | jq "[.[]| select(.branch == \"${CIRCLE_BRANCH}\")][0].build_num")
             curl -L -s "https://${NAVAJO_VERSION}-4423334-gh.circle-artifacts.com/0/streams_p2.zip?circle-token=$CIRCLE_TOKEN" -o streams_p2.zip
-            ls *.zip | xargs -I '{}' unzip -o '{}'
+            unzip -o streams_p2.zip
             rm -rf artifacts.* content.* features* *.index
-            rm *.zip
+            rm streams_p2.zip
 
       # See https://circleci.com/docs/2.0/building-docker-images/
       - setup_remote_docker:
@@ -39,21 +39,22 @@ jobs:
             SUFFIX=$([[ $CIRCLE_BRANCH = "master" ]] && echo "" || echo "-$CIRCLE_BRANCH")
             PREFIX="3.3"
 
-            IMAGE="dexels/navajo-streams"
-            VERSION="${PREFIX}.${CIRCLE_BUILD_NUM}${SUFFIX}"
-
+            DEXELSBASE_IMAGE="dexels/dexels-base"
             DEXELSBASE_URL="https://circleci.com/api/v1.1/project/github/Dexels/dexels-base?circle-token=${CIRCLE_TOKEN}&limit=100&offset=0&filter=successful"
             DEXELSBASE_BUILD=$(curl -s "$DEXELSBASE_URL" | jq "[.[]| select(.branch == \"${CIRCLE_BRANCH}\" and .workflows.job_name == \"package\")][0].build_num")
-            DEXELSBASE_VERSION=${PREFIX}.${DEXELSBASE_BUILD}${SUFFIX}
+            DEXELSBASE_VERSION="${PREFIX}.${DEXELSBASE_BUILD}${SUFFIX}"
 
-            echo "Building '${IMAGE}:${VERSION}' from 'dexels/dexels-base:${DEXELSBASE_VERSION}'"
+            TARGET_IMAGE="dexels/navajo-streams"
+            TARGET_VERSION="${PREFIX}.${CIRCLE_BUILD_NUM}${SUFFIX}"
+
+            echo "Building '${TARGET_IMAGE}:${TARGET_VERSION}' from '${DEXELSBASE_IMAGE}:${DEXELSBASE_VERSION}'"
             cd ~/repo
             ls -l
-            docker  build  --build-arg TAG=${DEXELSBASE_VERSION}  -t "${IMAGE}:${VERSION}"  .
-            docker  push   "${IMAGE}:${VERSION}"
+            docker  build  --build-arg TAG=${DEXELSBASE_VERSION}  -t "${TARGET_IMAGE}:${TARGET_VERSION}"  .
+            docker  push   "${TARGET_IMAGE}:${TARGET_VERSION}"
             if [ "${CIRCLE_BRANCH}" = "master" ]; then
-                docker  tag   "${IMAGE}:${VERSION}" "${IMAGE}:latest"
-                docker  push  "${IMAGE}:latest"
+                docker  tag   "${TARGET_IMAGE}:${TARGET_VERSION}" "${TARGET_IMAGE}:latest"
+                docker  push  "${TARGET_IMAGE}:latest"
             fi
 
       - run:
@@ -64,7 +65,7 @@ jobs:
                     --header "Content-Type: application/json" \
                     --header "Circle-Token: ${CIRCLE_TOKEN}" \
                     -d "{ \"branch\" : \"${CIRCLE_BRANCH}\" }" \
-                    "https://circleci.com/api/v1.1/project/github/dexels/sportlink.replication/build?"
+                    "https://circleci.com/api/v1.1/project/github/dexels/sportlink.replication/build"
             fi
 
 workflows:
