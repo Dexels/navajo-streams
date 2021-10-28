@@ -60,13 +60,11 @@ jobs:
       - run:
           name: Trigger sportlink.replication build
           command: |
-            if [ "${CIRCLE_BRANCH}" = "master" ]; then
-                curl -X POST \
-                    --header "Content-Type: application/json" \
-                    --header "Circle-Token: ${CIRCLE_TOKEN}" \
-                    -d "{ \"branch\" : \"${CIRCLE_BRANCH}\" }" \
-                    "https://circleci.com/api/v1.1/project/github/dexels/sportlink.replication/build"
-            fi
+              curl -X POST \
+                  --header "Content-Type: application/json" \
+                  --header "Circle-Token: ${CIRCLE_TOKEN}" \
+                  -d "{ \"branch\" : \"${CIRCLE_BRANCH}\" }" \
+                  "https://circleci.com/api/v1.1/project/github/dexels/sportlink.replication/build"
 
 workflows:
   version: 2
